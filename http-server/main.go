@@ -48,11 +48,15 @@ func sendMessage(ctx context.Context, c *app.RequestContext) {
 		c.String(consts.StatusBadRequest, "Failed to parse request body: %v", err)
 		return
 	}
+	sender, _ := c.GetQuery("sender")
+	receiver, _ := c.GetQuery("receiver")
+	text, _ := c.GetQuery("text")
 	resp, err := cli.Send(ctx, &rpc.SendRequest{
 		Message: &rpc.Message{
-			Chat:   req.Chat,
-			Text:   req.Text,
-			Sender: req.Sender,
+			Chat:     sender + ":" + receiver,
+			Text:     text,
+			Sender:   sender,
+			SendTime: time.Now().UnixNano() / int64(time.Microsecond),
 		},
 	})
 	if err != nil {

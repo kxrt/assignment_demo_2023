@@ -2,15 +2,23 @@ version: '3.9'
 services:
   rpc-server:
     build: rpc-server
+    restart: always
     ports:
       - "8888:8888"
     environment:
       - SERVICE_NAME=rpc-server
       - SERVICE_TAGS=rpc
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=chat
+      - DB_PASSWORD=postgres
+      - DB_NAME=postgres
     depends_on:
       - etcd
+      - db
   http-server:
     build: http-server
+    restart: always
     ports:
       - "8080:8080"
     environment:
@@ -24,3 +32,19 @@ services:
     command: ["etcd", "--advertise-client-urls", "http://etcd:2379", "--listen-client-urls", "http://0.0.0.0:2379"]
     ports:
       - "2379:2379"
+
+  db:
+    image: postgres:14.1-alpine
+    restart: always
+    ports:
+      - "5433:5433"
+    environment:
+      - POSTGRES_USER=chat
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    volumes:
+      - db:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+volumes:
+  db:
+    driver: local
