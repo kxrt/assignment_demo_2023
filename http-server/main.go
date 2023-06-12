@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"log"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/TikTokTechImmersion/assignment_demo_2023/http-server/kitex_gen/rpc"
@@ -48,12 +50,16 @@ func sendMessage(ctx context.Context, c *app.RequestContext) {
 		c.String(consts.StatusBadRequest, "Failed to parse request body: %v", err)
 		return
 	}
-	sender, _ := c.GetQuery("sender")
-	receiver, _ := c.GetQuery("receiver")
-	text, _ := c.GetQuery("text")
+	sender, senderStatus := c.GetQuery("sender")
+	receiver, receiverStatus := c.GetQuery("receiver")
+	text, textStatus := c.GetQuery("text")
+	if !senderStatus || !receiverStatus || !textStatus {
+		c.String(consts.StatusBadRequest, "Missing request query parameters.")
+	}
+	chat := parseChat(sender, receiver)
 	resp, err := cli.Send(ctx, &rpc.SendRequest{
 		Message: &rpc.Message{
-			Chat:     sender + ":" + receiver,
+			Chat:     chat,
 			Text:     text,
 			Sender:   sender,
 			SendTime: time.Now().UnixNano() / int64(time.Microsecond),
@@ -75,12 +81,36 @@ func pullMessage(ctx context.Context, c *app.RequestContext) {
 		c.String(consts.StatusBadRequest, "Failed to parse request body: %v", err)
 		return
 	}
+	chat, chatStatus := c.GetQuery("chat")
+	if !chatStatus {
+		c.String(consts.StatusBadRequest, "No chat found.")
+		return
+	}
+	chat = parseChatPull(chat)
+	cursor, cursorStatus := c.GetQuery("cursor")
+	var cursorNum int64
+	if cursorStatus {
+		cursorNum, _ = strconv.ParseInt(cursor, 10, 64)
+	}
+	limit, limitStatus := c.GetQuery("limit")
+	var limitNum int32
+	if limitStatus {
+		tempLimitNum, _ := strconv.ParseInt(limit, 10, 32)
+		limitNum = int32(tempLimitNum)
+	} else {
+		limitNum = 10
+	}
+	reverse, reverseStatus := c.GetQuery("reverse")
+	var reverseBool bool
+	if reverseStatus {
+		reverseBool, _ = strconv.ParseBool(reverse)
+	}
 
 	resp, err := cli.Pull(ctx, &rpc.PullRequest{
-		Chat:    req.Chat,
-		Cursor:  req.Cursor,
-		Limit:   req.Limit,
-		Reverse: &req.Reverse,
+		Chat:    chat,
+		Cursor:  cursorNum,
+		Limit:   limitNum,
+		Reverse: &reverseBool,
 	})
 	if err != nil {
 		c.String(consts.StatusInternalServerError, err.Error())
@@ -103,4 +133,16 @@ func pullMessage(ctx context.Context, c *app.RequestContext) {
 		HasMore:    resp.GetHasMore(),
 		NextCursor: resp.GetNextCursor(),
 	})
+}
+
+func parseChat(a string, b string) string {
+	if a < b {
+		return a + ":" + b
+	}
+	return b + ":" + a
+}
+
+func parseChatPull(chat string) string {
+	participants := strings.Split(chat, ":")
+	return parseChat(participants[0], participants[1])
 }

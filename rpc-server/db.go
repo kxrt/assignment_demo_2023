@@ -7,6 +7,7 @@ import (
 	_ "github.com/lib/pq"
 	"log"
 	"os"
+	"strconv"
 )
 
 func InitializeDatabase() (*sql.DB, error) {
@@ -48,7 +49,7 @@ func PushMessage(m *rpc.Message) error {
 	sender := m.GetSender()
 	text := m.GetText()
 
-	query := `INSERT INTO messages (id, message, sender, created_at) VALUES ($1, $2, $3, $4)`
+	query := `INSERT INTO messages (chat, message, sender, created_at) VALUES ($1, $2, $3, $4)`
 
 	// Execute the INSERT query.
 	_, err = db.Exec(query, chat, text, sender, sendTime)
@@ -57,5 +58,46 @@ func PushMessage(m *rpc.Message) error {
 	}
 
 	return nil
+
+}
+
+func PullMessages(req *rpc.PullRequest) ([]*rpc.Message, error) {
+	db, err := InitializeDatabase()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+	c := req.GetChat()
+	c_at := strconv.FormatInt(int64(req.GetCursor()), 10)
+	l := strconv.FormatInt(int64(req.GetLimit()), 10)
+	r := req.GetReverse()
+	var rev string
+	if r {
+		rev = `DESC`
+	} else {
+		rev = `ASC`
+	}
+	query := `SELECT chat, message, sender, created_at FROM messages WHERE chat = '` + c + `' AND created_at >= ` + c_at + ` ORDER BY created_at ` + rev + ` LIMIT ` + l
+	fmt.Println(query)
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var messages []*rpc.Message
+	for rows.Next() {
+		var message rpc.Message
+		err := rows.Scan(&message.Chat, &message.Text, &message.Sender, &message.SendTime)
+		if err != nil {
+			return nil, err
+		}
+		messages = append(messages, &message)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return messages, nil
 
 }
