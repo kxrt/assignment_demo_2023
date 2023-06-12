@@ -39,13 +39,21 @@ This project extends the [TikTok Tech Immersion Backend Assignment](https://gith
 ### Sample requests
 
 - Check if the server is running
-```curl localhost:8080/ping```
+```bash
+curl localhost:8080/ping
+```
 
 - Send a chat message - "hi", from user "a" to user "b"
-```curl -X POST 'localhost:8080/api/send?sender=a&receiver=b&text=hi'```
+```bash
+curl -X POST 'localhost:8080/api/send?sender=a&receiver=b&text=hi'
+```
 
 - Get all chat messages between user "a" and user "b"
-```curl 'localhost:8080/api/pull?chat=a%3Ab'```
+```bash
+curl 'localhost:8080/api/pull?chat=a%3Ab'
+```
 
 - Using additional query parameters
-```curl 'localhost:8080/api/pull?chat=a%3Ab&limit=5&reverse=true&cursor=0000000'```
+```bash
+curl 'localhost:8080/api/pull?chat=a%3Ab&limit=5&reverse=true&cursor=0000000'
+```
