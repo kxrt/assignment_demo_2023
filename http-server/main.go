@@ -55,6 +55,7 @@ func sendMessage(ctx context.Context, c *app.RequestContext) {
 	text, textStatus := c.GetQuery("text")
 	if !senderStatus || !receiverStatus || !textStatus {
 		c.String(consts.StatusBadRequest, "Missing request query parameters.")
+		return
 	}
 	chat := parseChat(sender, receiver)
 	resp, err := cli.Send(ctx, &rpc.SendRequest{
@@ -86,16 +87,28 @@ func pullMessage(ctx context.Context, c *app.RequestContext) {
 		c.String(consts.StatusBadRequest, "No chat found.")
 		return
 	}
+	if len(strings.Split(chat, ":")) != 2 {
+		c.String(consts.StatusBadRequest, "Wrong chat format.")
+		return
+	}
 	chat = parseChatPull(chat)
 	cursor, cursorStatus := c.GetQuery("cursor")
 	var cursorNum int64
 	if cursorStatus {
-		cursorNum, _ = strconv.ParseInt(cursor, 10, 64)
+		cursorNum, err = strconv.ParseInt(cursor, 10, 64)
+		if err != nil {
+			c.String(consts.StatusBadRequest, "Failed to parse cursor: %v", err)
+			return
+		}
 	}
 	limit, limitStatus := c.GetQuery("limit")
 	var limitNum int32
 	if limitStatus {
-		tempLimitNum, _ := strconv.ParseInt(limit, 10, 32)
+		tempLimitNum, err := strconv.ParseInt(limit, 10, 32)
+		if err != nil {
+			c.String(consts.StatusBadRequest, "Failed to parse limit: %v", err)
+			return
+		}
 		limitNum = int32(tempLimitNum)
 	} else {
 		limitNum = 10
@@ -103,7 +116,11 @@ func pullMessage(ctx context.Context, c *app.RequestContext) {
 	reverse, reverseStatus := c.GetQuery("reverse")
 	var reverseBool bool
 	if reverseStatus {
-		reverseBool, _ = strconv.ParseBool(reverse)
+		reverseBool, err = strconv.ParseBool(reverse)
+		if err != nil {
+			c.String(consts.StatusBadRequest, "Failed to parse reverse: %v", err)
+			return
+		}
 	}
 
 	resp, err := cli.Pull(ctx, &rpc.PullRequest{
