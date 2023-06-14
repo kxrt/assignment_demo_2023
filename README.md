@@ -1,6 +1,6 @@
 # TikTok Tech Immersion Backend Assignment Demo
 
-![Tests](https://github.com/kxrt/assignment_demo_2023/actions/workflows/test.yml/badge.svg)
+![Tests](https://github.com/kxrt/tiktok-assignment/actions/workflows/test.yml/badge.svg)
 
 ## Description
 
@@ -69,9 +69,9 @@ curl 'localhost:8080/api/pull?chat=a%3Ab'
 curl 'localhost:8080/api/pull?chat=a%3Ab&limit=5&reverse=true&cursor=0000000'
 ```
 
-### Configuration
+## Configuration
 
-#### PostgreSQL
+### PostgreSQL
 
 The PostgreSQL database service is configured using the following environment variables in `docker-compose.yml`:
 - `POSTGRES_USER` - The username of the database user
@@ -99,10 +99,15 @@ Replace `{DB_USER}` and `{DB_NAME}` with the values in `docker-compose.yml`. Onc
 SELECT * FROM messages;
 ```
 
-#### API Server
+### API Server
 
 To change the port of the API server, change the `ports` value in `docker-compose.yml`.
 
-#### RPC Server
+### RPC Server
 
 To change the port of the RPC server, change the `ports` value in `docker-compose.yml`.
+
+## Additional Notes
+
+- Messages are restricted to a length of 500 characters. Change this in `db/init.sql` if required.
+
