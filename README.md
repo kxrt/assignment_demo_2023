@@ -110,4 +110,7 @@ To change the port of the RPC server, change the `ports` value in `docker-compos
 ## Additional Notes
 
 - Messages are restricted to a length of 500 characters. Change this in `db/init.sql` if required.
+- When load-testing using [locust](https://locust.io), the server could handle **600 users** at up to **270 requests per second** before experiencing its first failure. This is well above the requirements of the assignment. The results can be found in `locust-results.txt`.
+
+Overall, I am really happy to have completed this assignment, and enjoyed working with Go in the process - I aim to use it more in the future.
 
